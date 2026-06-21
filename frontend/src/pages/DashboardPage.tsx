@@ -30,7 +30,7 @@ import { FuelTrendChart, SpeedTrendChart, WeatherTrendChart } from "@/components
 import RouteMap from "@/components/RouteMap";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-// ── Formatting Helpers ──────────────────────────────────────────────────────
+// ──Formatting Helpers ──────────────────────────────────────────────────────
 
 function fmt(v: number | null | undefined, decimals = 2): string {
   if (v === null || v === undefined) return "—";
