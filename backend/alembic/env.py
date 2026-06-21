@@ -33,6 +33,7 @@ from app.models.voyage import Voyage  # noqa: F401
 from app.models.daily_report import DailyReport  # noqa: F401
 from app.models.port import Port  # noqa: F401
 from app.models.historical_route import HistoricalRoute  # noqa: F401
+from app.models.user import User  # noqa: F401
 
 target_metadata = Base.metadata
 

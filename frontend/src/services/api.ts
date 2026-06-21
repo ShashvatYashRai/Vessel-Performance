@@ -14,10 +14,21 @@ import type {
   RouteDataPayload,
   PortInfo,
   RoutePlanResult,
+  AdminPlatformStats,
+  AdminUserInfo,
 } from "@/types";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
+});
+
+// Attach JWT token to every request if present
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // ── Upload (Phase 1 — preserved) ────────────────────────────────────────────
@@ -190,6 +201,18 @@ export async function planRoute(
     originPortId,
     destinationPortId,
   });
+  return res.data.data;
+}
+
+// ── Admin API calls ─────────────────────────────────────────────────────────
+
+export async function getAdminStats(): Promise<AdminPlatformStats> {
+  const res = await api.get<Envelope<AdminPlatformStats>>("/admin/stats");
+  return res.data.data;
+}
+
+export async function getAdminUsers(): Promise<AdminUserInfo[]> {
+  const res = await api.get<Envelope<AdminUserInfo[]>>("/admin/users");
   return res.data.data;
 }
 

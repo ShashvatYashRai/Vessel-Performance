@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
+from app.models.user import User
+from app.services.auth_service import get_current_user
 from app.api.analytics import load_vessel_and_reports
 
 router = APIRouter(prefix="/api/routes", tags=["Routes"])
@@ -36,10 +38,13 @@ def get_route_positions(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve chronologically sorted vessel positions with structured metadata."""
+    user_id = None if current_user.role == "admin" else current_user.id
     vessel, reports, err = load_vessel_and_reports(
-        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate,
+        user_id=user_id,
     )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
@@ -94,3 +99,4 @@ def get_route_positions(
             "positions": positions,
         },
     }
+

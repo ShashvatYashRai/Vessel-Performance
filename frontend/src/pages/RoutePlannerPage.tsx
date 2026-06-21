@@ -282,9 +282,7 @@ export default function RoutePlannerPage() {
                       )}
                     </div>
                     <CardTitle className="text-base font-bold mt-2">{selectedRoute.routeName}</CardTitle>
-                    <CardDescription className="text-xs mt-0.5">
-                      Operational summary and default historical metadata.
-                    </CardDescription>
+                    <CardDescription className="text-xs mt-0.5">Operational summary and default historical metadata.</CardDescription>
                   </div>
                   <div className="text-right flex flex-col items-end shrink-0">
                     {selectedRoute.score !== undefined && (
@@ -293,40 +291,25 @@ export default function RoutePlannerPage() {
                         <span className="text-sm font-extrabold text-foreground tabular-nums">{selectedRoute.score}</span>
                       </div>
                     )}
-                    <span className="text-2xl font-black tabular-nums tracking-tight text-foreground block leading-none">
-                      {selectedRoute.distanceNm.toLocaleString()}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-1 block">
-                      Distance (NM)
-                    </span>
+                    <span className="text-2xl font-black tabular-nums tracking-tight text-foreground block leading-none">{selectedRoute.distanceNm.toLocaleString()}</span>
+                    <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-1 block">Distance (NM)</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-2">
                   <div className="grid grid-cols-2 gap-4 border-y border-border/30 py-3 text-xs">
                     {/* Data Source & Provenance */}
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
-                        Source
-                      </span>
-                      <span className="font-medium text-foreground capitalize mt-0.5 block">
-                        {selectedRoute.dataSource?.replace(/_/g, " ") || "Historical Logs"}
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">Source</span>
+                      <span className="font-medium text-foreground capitalize mt-0.5 block">{selectedRoute.dataSource?.replace(/_/g, " ") || "Historical Logs"}</span>
                     </div>
                     {/* Confidence score */}
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
-                        Confidence
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">Confidence</span>
                       <div className="flex items-center gap-1.5 mt-1">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[60px]">
-                          <div
-                            className="h-full bg-blue-500 rounded-full"
-                            style={{ width: `${(selectedRoute.confidence || 0.5) * 100}%` }}
-                          />
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(selectedRoute.confidence || 0.5) * 100}%` }}></div>
                         </div>
-                        <span className="font-semibold tabular-nums text-foreground">
-                          {Math.round((selectedRoute.confidence || 0.5) * 100)}%
-                        </span>
+                        <span className="font-semibold tabular-nums text-foreground">{Math.round((selectedRoute.confidence || 0.5) * 100)}%</span>
                       </div>
                     </div>
                   </div>
@@ -334,71 +317,39 @@ export default function RoutePlannerPage() {
                   {/* Operational Metrics */}
                   <div className="grid grid-cols-3 gap-2 py-1 text-xs">
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
-                        Weather Risk
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">Weather Risk</span>
                       <div className="mt-1">{getWeatherRiskBadge(selectedRoute.weatherRisk)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
-                        Est. Fuel
-                      </span>
-                      <span className="font-bold text-foreground block mt-1">
-                        {selectedRoute.fuelEstimateMt ? `${selectedRoute.fuelEstimateMt.toFixed(1)} MT` : "—"}
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">Est. Fuel</span>
+                      <span className="font-bold text-foreground block mt-1">{selectedRoute.fuelEstimateMt ? `${selectedRoute.fuelEstimateMt.toFixed(1)} MT` : "—"}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">
-                        Reliability
-                      </span>
-                      <span className="font-bold text-foreground block mt-1">
-                        {selectedRoute.historicalSuccessRate !== null ? `${selectedRoute.historicalSuccessRate.toFixed(1)}%` : "—"}
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-semibold tracking-wider">Reliability</span>
+                      <span className="font-bold text-foreground block mt-1">{selectedRoute.historicalSuccessRate !== null ? `${selectedRoute.historicalSuccessRate.toFixed(1)}%` : "—"}</span>
                     </div>
                   </div>
 
                   {/* Score Breakdown Section */}
                   {selectedRoute.scoreBreakdown && (
                     <div className="border-t border-border/30 pt-3.5 space-y-2">
-                      <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wider">
-                        Score Breakdown
-                      </span>
+                      <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wider">Score Breakdown</span>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                         <div className="space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-muted-foreground">Distance</span>
-                            <span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.distance}</span>
-                          </div>
-                          <div className="h-1 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.distance}%` }} />
-                          </div>
+                          <div className="flex justify-between text-[10px]"><span className="text-muted-foreground">Distance</span><span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.distance}</span></div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.distance}%` }}></div></div>
                         </div>
                         <div className="space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-muted-foreground">Weather</span>
-                            <span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.weather}</span>
-                          </div>
-                          <div className="h-1 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.weather}%` }} />
-                          </div>
+                          <div className="flex justify-between text-[10px]"><span className="text-muted-foreground">Weather</span><span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.weather}</span></div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.weather}%` }}></div></div>
                         </div>
                         <div className="space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-muted-foreground">Fuel Efficiency</span>
-                            <span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.fuel}</span>
-                          </div>
-                          <div className="h-1 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.fuel}%` }} />
-                          </div>
+                          <div className="flex justify-between text-[10px]"><span className="text-muted-foreground">Fuel Efficiency</span><span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.fuel}</span></div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.fuel}%` }}></div></div>
                         </div>
                         <div className="space-y-1">
-                          <div className="flex justify-between text-[10px]">
-                            <span className="text-muted-foreground">Reliability</span>
-                            <span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.reliability}</span>
-                          </div>
-                          <div className="h-1 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.reliability}%` }} />
-                          </div>
+                          <div className="flex justify-between text-[10px]"><span className="text-muted-foreground">Reliability</span><span className="font-semibold tabular-nums text-foreground">{selectedRoute.scoreBreakdown.reliability}</span></div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${selectedRoute.scoreBreakdown.reliability}%` }}></div></div>
                         </div>
                       </div>
                     </div>
@@ -407,13 +358,8 @@ export default function RoutePlannerPage() {
                   {/* Waypoints Collapsible Section */}
                   {selectedRoute.waypoints && selectedRoute.waypoints.length > 0 && (
                     <div className="pt-2">
-                      <button
-                        onClick={() => setShowWaypoints(!showWaypoints)}
-                        className="w-full flex items-center justify-between py-1.5 px-2 bg-muted/30 border border-border/30 hover:bg-muted/50 rounded-lg text-xs font-semibold text-foreground transition-all"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          📍 {selectedRoute.waypoints.length} Route Waypoints
-                        </span>
+                      <button onClick={() => setShowWaypoints(!showWaypoints)} className="w-full flex items-center justify-between py-1.5 px-2 bg-muted/30 border border-border/30 hover:bg-muted/50 rounded-lg text-xs font-semibold text-foreground transition-all">
+                        <span className="flex items-center gap-1.5">📍 {selectedRoute.waypoints.length} Route Waypoints</span>
                         <span>{showWaypoints ? "▼" : "▶"}</span>
                       </button>
 
@@ -424,16 +370,10 @@ export default function RoutePlannerPage() {
                             if (idx === 0) label = `Origin (${getOriginPort()?.name || "Start"})`;
                             if (idx === (selectedRoute.waypoints?.length || 0) - 1)
                               label = `Destination (${getDestinationPort()?.name || "End"})`;
-
                             return (
-                              <div
-                                key={idx}
-                                className="flex justify-between items-center text-[11px] py-1 border-b border-border/10 last:border-0 hover:bg-muted/10 px-1 rounded"
-                              >
+                              <div key={idx} className="flex justify-between items-center text-[11px] py-1 border-b border-border/10 last:border-0 hover:bg-muted/10 px-1 rounded">
                                 <span className="text-muted-foreground font-medium">{label}</span>
-                                <span className="font-mono tabular-nums text-foreground/80">
-                                  {wp.lat.toFixed(4)}°, {wp.lon.toFixed(4)}°
-                                </span>
+                                <span className="font-mono tabular-nums text-foreground/80">{wp.lat.toFixed(4)}°, {wp.lon.toFixed(4)}°</span>
                               </div>
                             );
                           })}
@@ -452,18 +392,11 @@ export default function RoutePlannerPage() {
               </Card>
 
               {/* Why Recommended Explanation Panel */}
-              {planResult?.recommendationReasons &&
-               planResult.recommendationReasons.length > 0 &&
-               planResult.recommendedRoute &&
-               selectedRoute.id === planResult.recommendedRoute.id && (
+              {planResult?.recommendationReasons && planResult.recommendationReasons.length > 0 && planResult.recommendedRoute && selectedRoute.id === planResult.recommendedRoute.id && (
                 <Card className="border-border/40 bg-card/65 shadow-sm border-l-4 border-l-emerald-500">
                   <CardHeader className="pb-2.5">
-                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                      Why Recommended?
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Deterministic audit checklist explaining the recommendation.
-                    </CardDescription>
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-400">Why Recommended?</CardTitle>
+                    <CardDescription className="text-xs">Deterministic audit checklist explaining the recommendation.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2.5 text-xs pb-3.5">
                     {planResult.recommendationReasons.map((reason, idx) => (
@@ -479,16 +412,10 @@ export default function RoutePlannerPage() {
               {/* Alternative Routes list */}
               {alternativeRoutes.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-                    Alternative Historical Corridors
-                  </h3>
+                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">Alternative Historical Corridors</h3>
                   <div className="space-y-2">
                     {alternativeRoutes.map((route) => (
-                      <div
-                        key={route.id}
-                        onClick={() => handleSelectRoute(route)}
-                        className="group flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-muted/40 cursor-pointer transition-all hover:border-border"
-                      >
+                      <div key={route.id} onClick={() => handleSelectRoute(route)} className="group flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card hover:bg-muted/40 cursor-pointer transition-all hover:border-border">
                         <div>
                           <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
                             {route.routeName}
@@ -498,17 +425,11 @@ export default function RoutePlannerPage() {
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">
-                            Success: {route.historicalSuccessRate !== null ? `${route.historicalSuccessRate}%` : "—"} • Weather: {route.weatherRisk}
-                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">Success: {route.historicalSuccessRate !== null ? `${route.historicalSuccessRate}%` : "—"} • Weather: {route.weatherRisk}</div>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-bold tabular-nums text-foreground">
-                            {route.distanceNm} NM
-                          </span>
-                          <span className="block text-[8px] text-muted-foreground font-medium uppercase tracking-wider">
-                            Corridor Distance
-                          </span>
+                          <span className="text-xs font-bold tabular-nums text-foreground">{route.distanceNm} NM</span>
+                          <span className="block text-[8px] text-muted-foreground font-medium uppercase tracking-wider">Corridor Distance</span>
                         </div>
                       </div>
                     ))}
@@ -522,39 +443,24 @@ export default function RoutePlannerPage() {
           {!planning && originId && destinationId && !selectedRoute && (
             <Card className="border-dashed border-border/70 bg-muted/10 py-6 px-4 text-center rounded-xl">
               <div className="text-base text-amber-500 mb-2">⚠️ No Historical Corridors Available</div>
-              <p className="text-xs text-muted-foreground leading-relaxed max-w-[340px] mx-auto">
-                There are no established historical routes recorded between these ports. The map will display a geodesic straight line for reference.
-              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-[340px] mx-auto">There are no established historical routes recorded between these ports. The map will display a geodesic straight line for reference.</p>
             </Card>
           )}
 
           {/* Prompt to select ports */}
-          {!originId || !destinationId ? (
+          {(!originId || !destinationId) && (
             <Card className="border border-border/30 bg-muted/5 py-12 px-4 text-center rounded-xl">
               <div className="size-10 rounded-full bg-muted/40 border border-border/30 flex items-center justify-center mx-auto mb-3">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="size-5 text-muted-foreground"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5 text-muted-foreground">
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
                   <path d="M2 12h20" />
                 </svg>
               </div>
-              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-                Awaiting Inputs
-              </div>
-              <p className="text-[11px] text-muted-foreground/80 max-w-[280px] mx-auto">
-                Configure both origin and destination ports above to fetch historical shipping routing recommendations.
-              </p>
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">Awaiting Inputs</div>
+              <p className="text-[11px] text-muted-foreground/80 max-w-[280px] mx-auto">Configure both origin and destination ports above to fetch historical shipping routing recommendations.</p>
             </Card>
-          ) : null}
+          )}
         </div>
 
         {/* Right Side: Map Display (7 columns) */}
@@ -563,33 +469,21 @@ export default function RoutePlannerPage() {
             <CardHeader className="pb-3 border-b border-border/30 flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-semibold">Interactive Operations Map</CardTitle>
-                <CardDescription className="text-xs">
-                  Visual representation of the selected historical shipping track.
-                </CardDescription>
+                <CardDescription className="text-xs">Visual representation of the selected historical shipping track.</CardDescription>
               </div>
               {selectedRoute && (
-                <div className="text-xs font-semibold px-2.5 py-1 bg-muted/40 border border-border/30 rounded text-foreground">
-                  📈 {selectedRoute.routeName} ({selectedRoute.distanceNm} NM)
-                </div>
+                <div className="text-xs font-semibold px-2.5 py-1 bg-muted/40 border border-border/30 rounded text-foreground">📈 {selectedRoute.routeName} ({selectedRoute.distanceNm} NM)</div>
               )}
             </CardHeader>
             <div className="p-1.5 relative">
-              <PlannedRouteMap
-                origin={getOriginPort()}
-                destination={getDestinationPort()}
-                selectedRoute={selectedRoute}
-                alternativeRoutes={alternativeRoutes}
-                onSelectRoute={handleSelectRoute}
-              />
+              <PlannedRouteMap origin={getOriginPort()} destination={getDestinationPort()} selectedRoute={selectedRoute} alternativeRoutes={alternativeRoutes} onSelectRoute={handleSelectRoute} />
             </div>
           </Card>
 
           {/* Map Explainer legend note */}
           <div className="flex items-start gap-2.5 text-[11px] text-muted-foreground bg-muted/15 border border-border/20 p-3 rounded-lg">
             <span className="text-xs">ℹ️</span>
-            <p className="leading-normal">
-              <strong>Corridor Interaction:</strong> Solid blue lines represent the active recommended track. Dotted gray lines show alternative paths. Hovering over alternatives highlights them in cyan; clicking a route updates the operational metrics and details.
-            </p>
+            <p className="leading-normal"><strong>Corridor Interaction:</strong> Solid blue lines represent the active recommended track. Dotted gray lines show alternative paths. Hovering over alternatives highlights them in cyan; clicking a route updates the operational metrics and details.</p>
           </div>
         </div>
 
@@ -599,9 +493,7 @@ export default function RoutePlannerPage() {
             <Card className="border-border/40 bg-card/65 shadow-md overflow-hidden">
               <CardHeader className="pb-3 border-b border-border/30">
                 <CardTitle className="text-sm font-semibold">Route Comparison Table</CardTitle>
-                <CardDescription className="text-xs">
-                  Auditable comparison of all historical shipping corridors between the selected ports.
-                </CardDescription>
+                <CardDescription className="text-xs">Auditable comparison of all historical shipping corridors between the selected ports.</CardDescription>
               </CardHeader>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left text-xs">
@@ -617,50 +509,20 @@ export default function RoutePlannerPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      ...(planResult.recommendedRoute ? [planResult.recommendedRoute] : []),
-                      ...planResult.alternativeRoutes,
-                    ]
+                    {[...(planResult.recommendedRoute ? [planResult.recommendedRoute] : []), ...planResult.alternativeRoutes]
                       .sort((a, b) => (b.score || 0) - (a.score || 0))
                       .map((route) => {
                         const isRecommended = planResult.recommendedRoute && route.id === planResult.recommendedRoute.id;
                         const isSelected = selectedRoute && route.id === selectedRoute.id;
-
                         return (
-                          <tr
-                            key={route.id}
-                            onClick={() => handleSelectRoute(route)}
-                            className={`border-b border-border/20 hover:bg-muted/30 cursor-pointer transition-colors ${
-                              isSelected ? "bg-muted/15 font-medium" : ""
-                            }`}
-                          >
-                            <td className="p-3">
-                              {isRecommended ? (
-                                <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">
-                                  🏆 Recommended
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2 py-0.5 rounded text-[10px] font-bold">
-                                  Alternative
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3 text-foreground font-semibold">
-                              {route.routeName}
-                            </td>
+                          <tr key={route.id} onClick={() => handleSelectRoute(route)} className={`border-b border-border/20 hover:bg-muted/30 cursor-pointer transition-colors ${isSelected ? "bg-muted/15 font-medium" : ""}`}>
+                            <td className="p-3">{isRecommended ? (<span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">🏆 Recommended</span>) : (<span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-400 border border-slate-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Alternative</span>)}</td>
+                            <td className="p-3 text-foreground font-semibold">{route.routeName}</td>
                             <td className="p-3 tabular-nums">{route.distanceNm.toLocaleString()} NM</td>
-                            <td className="p-3 text-foreground">
-                              {route.weatherRisk}
-                            </td>
-                            <td className="p-3 tabular-nums text-foreground">
-                              {route.fuelEstimateMt ? `${route.fuelEstimateMt.toFixed(1)} MT` : "—"}
-                            </td>
-                            <td className="p-3 text-right tabular-nums text-foreground">
-                              {route.historicalSuccessRate !== null ? `${route.historicalSuccessRate.toFixed(1)}%` : "—"}
-                            </td>
-                            <td className="p-3 text-right tabular-nums font-bold text-foreground">
-                              {route.score ?? "—"} <span className="text-[10px] text-muted-foreground font-normal">/ 100</span>
-                            </td>
+                            <td className="p-3 text-foreground">{route.weatherRisk}</td>
+                            <td className="p-3 tabular-nums text-foreground">{route.fuelEstimateMt ? `${route.fuelEstimateMt.toFixed(1)} MT` : "—"}</td>
+                            <td className="p-3 text-right tabular-nums text-foreground">{route.historicalSuccessRate !== null ? `${route.historicalSuccessRate.toFixed(1)}%` : "—"}</td>
+                            <td className="p-3 text-right tabular-nums font-bold text-foreground">{route.score ?? "—"} <span className="text-[10px] text-muted-foreground font-normal">/ 100</span></td>
                           </tr>
                         );
                       })}

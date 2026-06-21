@@ -10,7 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
@@ -64,7 +64,7 @@ class HistoricalRoute(Base):
 
     # ── Future-Ready Fields ──────────────────────────────────────────
     waypoints = Column(
-        JSONB, nullable=True,
+        JSON, nullable=True,
         doc="Ordered array of {lat, lon} intermediate waypoints for detailed route geometry.",
     )
     weather_risk = Column(

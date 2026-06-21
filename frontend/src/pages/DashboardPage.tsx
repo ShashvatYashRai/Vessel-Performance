@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import {
   getVessels,
   getVesselDashboard,
@@ -9,6 +11,8 @@ import {
   getTimeline,
   getOperationalInsights,
   getRoutePositions,
+  getAdminStats,
+  getAdminUsers,
 } from "@/services/api";
 import type {
   VesselInfo,
@@ -19,6 +23,8 @@ import type {
   TimelineEvent,
   OperationalInsight,
   RouteDataPayload,
+  AdminPlatformStats,
+  AdminUserInfo,
 } from "@/types";
 import { FuelTrendChart, SpeedTrendChart, WeatherTrendChart } from "@/components/SvgCharts";
 import RouteMap from "@/components/RouteMap";
@@ -79,6 +85,8 @@ function Metric({ label, value, unit }: { label: string; value: string; unit?: s
 
 export default function DashboardPage() {
   usePageTitle("Dashboard");
+  const [searchParams] = useSearchParams();
+  const vesselParam = searchParams.get("vesselId");
 
   // Filter state
   const [vessels, setVessels] = useState<VesselInfo[]>([]);
@@ -100,16 +108,59 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Admin state
+  const { user } = useAuth();
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [adminStats, setAdminStats] = useState<AdminPlatformStats | null>(null);
+  const [adminUsers, setAdminUsers] = useState<AdminUserInfo[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
+
+  // Sync state with user role on load
+  useEffect(() => {
+    if (user?.role === "admin") {
+      setIsAdminView(true);
+    }
+  }, [user]);
+
+  const loadAdminData = useCallback(async () => {
+    setAdminLoading(true);
+    setAdminError(null);
+    try {
+      const [stats, usersList] = await Promise.all([
+        getAdminStats(),
+        getAdminUsers(),
+      ]);
+      setAdminStats(stats);
+      setAdminUsers(usersList);
+    } catch {
+      setAdminError("Failed to load admin statistics.");
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdminView) {
+      loadAdminData();
+    }
+  }, [isAdminView, loadAdminData]);
+
   // ── Load vessel list on mount ───────────────────────────────────────────
   useEffect(() => {
     getVessels()
-      .then((v) => {
-        setVessels(v);
-        if (v.length > 0) setSelectedVessel(v[0]);
-      })
-      .catch(() => setError("Failed to load vessels. Is the backend running?"))
-      .finally(() => setLoading(false));
-  }, []);
+        .then((v) => {
+          const vesselsData = v ?? [];
+          setVessels(vesselsData);
+          if (vesselsData.length > 0) {
+            const targetId = vesselParam ? Number(vesselParam) : null;
+            const preselected = vesselsData.find((item) => item.id === targetId) || vesselsData[0];
+            setSelectedVessel(preselected);
+          }
+        })
+        .catch(() => setError("Failed to load vessels. Is the backend running?"))
+        .finally(() => setLoading(false));
+  }, [vesselParam]);
 
   // ── Load analytics when vessel or filters change ────────────────────────
   const loadData = useCallback(async () => {
@@ -148,6 +199,183 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedVessel) loadData();
   }, [selectedVessel, loadData]);
+
+  // ── Admin Dashboard Rendering ────────────────────────────────────────────
+  if (isAdminView && user?.role === "admin") {
+    return (
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Toggle Admin View */}
+        <div className="flex justify-between items-center pb-2 border-b border-border/30">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Platform Administration</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Monitoring platform-wide users, reports, and ingestion pipelines
+            </p>
+          </div>
+          <button
+            onClick={() => setIsAdminView(false)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+            </svg>
+            Switch to Analytics
+          </button>
+        </div>
+
+        {/* Loader or Error */}
+        {adminLoading && !adminStats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+          </div>
+        )}
+
+        {adminError && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-destructive font-semibold">{adminError}</p>
+            <button onClick={loadAdminData} className="mt-3 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Admin stats grid */}
+        {adminStats && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                    Total Registered Users
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{adminStats.totalUsers}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Active platform operators</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                    Total Processed Vessels
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{adminStats.totalVessels}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Unique vessels monitored</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                    Total Noon Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold tabular-nums">{adminStats.totalReports}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Successfully parsed reports</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-[hsl(210,70%,50%)]/30 bg-[hsl(210,70%,50%)]/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wider text-[hsl(210,70%,60%)] font-medium">
+                    Upload Activity (7d)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-[hsl(210,70%,60%)] tabular-nums">{adminStats.recentUploads}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Reports added past week</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Split layout: Users directory (left) vs Activity Log (right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Users Directory */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-3 border-b border-border/40">
+                  <CardTitle className="text-sm font-bold">User Directory</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border/40 text-muted-foreground uppercase font-semibold tracking-wider text-[10px] bg-muted/20">
+                          <th className="py-2.5 px-4">Username</th>
+                          <th className="py-2.5 px-4">Email</th>
+                          <th className="py-2.5 px-4 text-center">Role</th>
+                          <th className="py-2.5 px-4 text-right">Reports</th>
+                          <th className="py-2.5 px-4 text-right">Registration Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/20">
+                        {adminUsers.map((u) => (
+                          <tr key={u.id} className="hover:bg-muted/10 transition-colors">
+                            <td className="py-3 px-4 font-semibold text-foreground">{u.username}</td>
+                            <td className="py-3 px-4 text-muted-foreground">{u.email}</td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold capitalize ${
+                                u.role === "admin"
+                                  ? "bg-[hsl(210,70%,50%)]/10 text-[hsl(210,70%,65%)] border border-[hsl(210,70%,50%)]/20"
+                                  : "bg-muted text-muted-foreground"
+                              }`}>
+                                {u.role}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium tabular-nums">{u.reportCount}</td>
+                            <td className="py-3 px-4 text-right text-muted-foreground tabular-nums">
+                              {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Activity Log */}
+              <Card>
+                <CardHeader className="pb-3 border-b border-border/40">
+                  <CardTitle className="text-sm font-bold">Recent Report Ingestions</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+                  {adminStats.recentActivity.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-8 text-center">No recent upload activity.</p>
+                  ) : (
+                    adminStats.recentActivity.map((activity, idx) => (
+                      <div key={idx} className="text-xs pb-3 border-b border-border/20 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-semibold text-foreground truncate max-w-[120px]">{activity.vesselName}</span>
+                          <span className="text-[10px] text-muted-foreground tabular-nums">
+                            {activity.ingestedAt ? new Date(activity.ingestedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate" title={activity.sourceFileName}>
+                          File: {activity.sourceFileName}
+                        </p>
+                        <div className="flex items-center justify-between mt-1 text-[10px]">
+                          <span className="text-muted-foreground">
+                            By: <span className="text-foreground/80 font-medium">{activity.uploadedBy}</span>
+                          </span>
+                          <span className="text-muted-foreground">
+                            Date: <span className="text-foreground/80 font-medium tabular-nums">{activity.reportDate || "—"}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   // ── Empty State ─────────────────────────────────────────────────────────
   if (!loading && vessels.length === 0 && !error) {
@@ -192,6 +420,26 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* ── Toggle Admin View (only visible to admin role) ───────────────── */}
+      {user?.role === "admin" && (
+        <div className="flex justify-between items-center pb-2 border-b border-border/30">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Vessel Performance Dashboard</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Analyzing vessel performance data for {selectedVessel?.vesselName || "vessel"}
+            </p>
+          </div>
+          <button
+            onClick={() => setIsAdminView(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted text-xs font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+            </svg>
+            Switch to Admin Panel
+          </button>
+        </div>
+      )}
       {/* ── Global Filters Bar ──────────────────────────────────────────── */}
       <div className="flex flex-wrap items-end gap-3">
         {/* Vessel Selector */}

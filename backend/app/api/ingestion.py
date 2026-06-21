@@ -15,6 +15,8 @@ from app.database.connection import get_db
 from app.parser.excel_parser import parse_excel_report
 from app.services.file_service import get_file_extension
 from app.services.ingestion_service import ingest_reports
+from app.services.auth_service import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/api", tags=["Ingestion"])
 
@@ -25,6 +27,7 @@ ALLOWED_EXCEL_EXTENSIONS = {"xlsx", "xls"}
 async def ingest_report(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Upload an Excel noon report, parse it, and ingest daily reports into
@@ -63,13 +66,21 @@ async def ingest_report(
         parsed_data, parser_info = parse_excel_report(file_stream)
 
         # 4. Ingest into PostgreSQL
-        ingestion_stats = ingest_reports(db, parsed_data, source_file_name=filename)
+        ingestion_stats = ingest_reports(
+            db, parsed_data, source_file_name=filename, user_id=current_user.id
+        )
+
+        vessel_name = parsed_data.get("vesselName", "Unknown")
+        from app.models.vessel import Vessel
+        vessel = db.query(Vessel).filter(Vessel.vessel_name == vessel_name).first()
 
         # 5. Return standardized envelope
         return {
             "success": True,
             "ingestion": ingestion_stats,
             "parserInfo": parser_info,
+            "vesselId": vessel.id if vessel else None,
+            "vesselName": vessel.vessel_name if vessel else None,
         }
 
     except ValueError as e:

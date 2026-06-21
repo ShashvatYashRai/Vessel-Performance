@@ -12,7 +12,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Index,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
@@ -29,14 +29,15 @@ class DailyReport(Base):
 
     __tablename__ = "daily_reports"
     __table_args__ = (
-        UniqueConstraint("vessel_id", "report_date", name="uq_vessel_report_date"),
-        Index("ix_vessel_report_date", "vessel_id", "report_date"),
+        UniqueConstraint("vessel_id", "report_date", "user_id", name="uq_vessel_report_date_user"),
+        Index("ix_vessel_report_date_user", "vessel_id", "report_date", "user_id"),
     )
 
     # ── Identity ──────────────────────────────────────────────────────
     id = Column(Integer, primary_key=True, autoincrement=True)
     vessel_id = Column(Integer, ForeignKey("vessels.id"), nullable=False)
     voyage_id = Column(Integer, ForeignKey("voyages.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     report_date = Column(Date, nullable=False)
 
     # ── Core Fields ───────────────────────────────────────────────────
@@ -92,7 +93,7 @@ class DailyReport(Base):
     ae3_running_hours = Column(Float, nullable=True)
 
     # ── Archive ───────────────────────────────────────────────────────
-    raw_json = Column(JSONB, nullable=False)
+    raw_json = Column(JSON, nullable=False)
 
     # ── Provenance ────────────────────────────────────────────────────
     source_file_name = Column(String(500), nullable=False)
@@ -108,6 +109,7 @@ class DailyReport(Base):
     # ── Relationships ─────────────────────────────────────────────────
     vessel = relationship("Vessel", back_populates="reports")
     voyage = relationship("Voyage", back_populates="reports")
+    user = relationship("User", back_populates="reports")
 
     def __repr__(self):
         return (

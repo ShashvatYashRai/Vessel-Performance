@@ -1,5 +1,7 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.responses import JSONResponse
+from app.services.auth_service import get_current_user
+from app.models.user import User
 
 from app.services.file_service import (
     validate_file_extension,
@@ -13,7 +15,10 @@ router = APIRouter(prefix="/api", tags=["Upload"])
 
 
 @router.post("/upload-report")
-async def upload_report(file: UploadFile = File(...)):
+async def upload_report(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
     """
     Upload an Excel or CSV file for processing.
 

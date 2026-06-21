@@ -15,17 +15,21 @@ from app.api.reports import router as reports_router
 from app.api.analytics import router as analytics_router
 from app.api.routes import router as routes_router
 from app.api.route_planner import router as route_planner_router
+from app.api.auth import router as auth_router
+from app.api.admin import router as admin_router
 
 load_dotenv()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: verify database connection on startup."""
+    """Application lifespan: verify database connection on startup and seed default admin."""
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        print("Database connection verified")
+        # After verifying DB connection, seed default admin if needed
+        from app.seed import seed_default_admin
+        seed_default_admin()
     except Exception as e:
         print(f"Database connection failed: {e}")
         print("  The application will start, but database features will be unavailable.")
@@ -56,6 +60,8 @@ app.add_middleware(
 
 # Routers
 app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(upload_router)
 app.include_router(parser_router)
 app.include_router(ingestion_router)

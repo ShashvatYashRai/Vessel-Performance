@@ -48,7 +48,7 @@ def upgrade() -> None:
         sa.Column('is_primary', sa.Boolean(), nullable=False),
         sa.Column('data_source', sa.String(length=255), nullable=True),
         sa.Column('confidence', sa.Float(), nullable=True),
-        sa.Column('waypoints', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column('waypoints', sa.JSON(), nullable=True),
         sa.Column('weather_risk', sa.String(length=50), nullable=True),
         sa.Column('fuel_estimate_mt', sa.Float(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=False),

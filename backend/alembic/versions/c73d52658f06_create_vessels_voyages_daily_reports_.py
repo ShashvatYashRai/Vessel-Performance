@@ -82,7 +82,7 @@ def upgrade() -> None:
     sa.Column('ae1_running_hours', sa.Float(), nullable=True),
     sa.Column('ae2_running_hours', sa.Float(), nullable=True),
     sa.Column('ae3_running_hours', sa.Float(), nullable=True),
-    sa.Column('raw_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('raw_json', sa.JSON(), nullable=False),
     sa.Column('source_file_name', sa.String(length=500), nullable=False),
     sa.Column('ingested_at', sa.DateTime(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),

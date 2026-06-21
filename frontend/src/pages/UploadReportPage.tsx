@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadReportPage() {
   usePageTitle("Upload");
+  const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -202,6 +204,28 @@ export default function UploadReportPage() {
                   <p>Parser: <span className="text-foreground font-medium">v{result.parserInfo.parserVersion}</span></p>
                 </div>
               )}
+
+              {/* View Dashboard redirect link */}
+              <div className="mt-5 pt-4 border-t border-border/30 flex justify-end">
+                <Button
+                  onClick={() => {
+                    const path = result.vesselId
+                      ? `/dashboard?vesselId=${result.vesselId}`
+                      : "/dashboard";
+                    navigate(path);
+                  }}
+                  id="view-report-button"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center gap-1.5 shadow-[0_2px_8px_rgba(16,185,129,0.2)] cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                    <rect width="7" height="9" x="3" y="3" rx="1" />
+                    <rect width="7" height="5" x="14" y="3" rx="1" />
+                    <rect width="7" height="9" x="14" y="12" rx="1" />
+                    <rect width="7" height="5" x="3" y="15" rx="1" />
+                  </svg>
+                  View Vessel Dashboard
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

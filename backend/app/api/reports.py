@@ -1,9 +1,9 @@
 """
 Reports API — Historical data retrieval endpoints.
 
-  GET /api/vessels           — List all registered vessels.
+  GET /api/vessels           — List vessels the current user has reports for (admin: all).
   GET /api/reports          — Query daily reports by vessel and date range.
-  GET /api/reports/summary  — Aggregate summary of all ingested data.
+  GET /api/reports/summary  — Aggregate summary of user-scoped ingested data (admin: all).
 """
 
 import datetime
@@ -17,14 +17,41 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.vessel import Vessel
 from app.models.daily_report import DailyReport
+from app.models.user import User
+from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api", tags=["Reports"])
 
 
 @router.get("/vessels")
-def list_vessels(db: Session = Depends(get_db)):
-    """Return all registered vessels for the vessel selector."""
-    vessels = db.query(Vessel).order_by(Vessel.vessel_name.asc()).all()
+def list_vessels(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return vessels visible to the current user.
+
+    - Admin: all registered vessels.
+    - Regular user: only vessels that have at least one daily report owned
+      by this user.
+    """
+    if current_user.role == "admin":
+        vessels = db.query(Vessel).order_by(Vessel.vessel_name.asc()).all()
+    else:
+        # Subquery: vessel IDs that have at least one report by this user
+        vessel_ids_subquery = (
+            db.query(DailyReport.vessel_id)
+            .filter(DailyReport.user_id == current_user.id)
+            .distinct()
+            .subquery()
+        )
+        vessels = (
+            db.query(Vessel)
+            .filter(Vessel.id.in_(vessel_ids_subquery))
+            .order_by(Vessel.vessel_name.asc())
+            .all()
+        )
+
     return {
         "success": True,
         "data": [
@@ -44,6 +71,7 @@ def get_reports(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Retrieve daily reports for a vessel, optionally filtered by date range.
@@ -66,7 +94,11 @@ def get_reports(
         }
 
     # Build query
-    query = db.query(DailyReport).filter(DailyReport.vessel_id == vessel.id)
+    query = db.query(DailyReport).filter(
+        DailyReport.vessel_id == vessel.id
+    )
+    if current_user.role != "admin":
+        query = query.filter(DailyReport.user_id == current_user.id)
 
     # Apply date filters
     if startDate:
@@ -126,17 +158,47 @@ def get_reports(
 
 
 @router.get("/reports/summary")
-def get_reports_summary(db: Session = Depends(get_db)):
+def get_reports_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
-    Return an aggregate summary of all ingested data.
+    Return an aggregate summary of ingested data.
 
-    Response includes total vessels, total reports, and the overall date range.
+    - Admin: platform-wide totals.
+    - Regular user: totals scoped to their own reports.
     """
-    total_vessels = db.query(func.count(Vessel.id)).scalar() or 0
-    total_reports = db.query(func.count(DailyReport.id)).scalar() or 0
+    if current_user.role == "admin":
+        # Platform-wide totals
+        total_vessels = db.query(func.count(Vessel.id)).scalar() or 0
+        total_reports = db.query(func.count(DailyReport.id)).scalar() or 0
+        date_min = db.query(func.min(DailyReport.report_date)).scalar()
+        date_max = db.query(func.max(DailyReport.report_date)).scalar()
+    else:
+        # User-scoped totals
+        user_reports = db.query(DailyReport).filter(
+            DailyReport.user_id == current_user.id
+        )
+        total_reports = user_reports.count()
 
-    date_min = db.query(func.min(DailyReport.report_date)).scalar()
-    date_max = db.query(func.max(DailyReport.report_date)).scalar()
+        # Count distinct vessels the user has reports for
+        total_vessels = (
+            db.query(func.count(func.distinct(DailyReport.vessel_id)))
+            .filter(DailyReport.user_id == current_user.id)
+            .scalar()
+            or 0
+        )
+
+        date_min = (
+            db.query(func.min(DailyReport.report_date))
+            .filter(DailyReport.user_id == current_user.id)
+            .scalar()
+        )
+        date_max = (
+            db.query(func.max(DailyReport.report_date))
+            .filter(DailyReport.user_id == current_user.id)
+            .scalar()
+        )
 
     return {
         "success": True,

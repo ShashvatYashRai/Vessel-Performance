@@ -5,6 +5,10 @@ import DashboardPage from "@/pages/DashboardPage";
 import UploadReportPage from "@/pages/UploadReportPage";
 import RoutePlannerPage from "@/pages/RoutePlannerPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import ErrorPage from "@/pages/ErrorPage";
 
 /**
  * Centralized route configuration.
@@ -15,11 +19,22 @@ import NotFoundPage from "@/pages/NotFoundPage";
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: "upload", element: <UploadReportPage /> },
-      { path: "route-planner", element: <RoutePlannerPage /> },
+      { path: "login", element: <LoginPage /> },
+      { path: "register", element: <RegisterPage /> },
+      
+      // Guarded Routes
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: "dashboard", element: <DashboardPage /> },
+          { path: "route-planner", element: <RoutePlannerPage /> },
+          { path: "upload", element: <UploadReportPage /> },
+        ],
+      },
+      
       { path: "*", element: <NotFoundPage /> },
     ],
   },

@@ -1,5 +1,7 @@
 """
 Analytics API Router — exposes endpoints for operational analytics, trends, and timeline.
+
+All endpoints are authenticated. Regular users see only their own data; admins see everything.
 """
 
 import datetime
@@ -12,6 +14,8 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.vessel import Vessel
 from app.models.daily_report import DailyReport
+from app.models.user import User
+from app.services.auth_service import get_current_user
 import app.services.analytics_service as service
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
@@ -25,10 +29,14 @@ def load_vessel_and_reports(
     vessel_id: Optional[int] = None,
     start_date_str: Optional[str] = None,
     end_date_str: Optional[str] = None,
+    user_id: Optional[int] = None,
 ):
     """
     Helper to look up a vessel and fetch its DailyReport records sorted by date,
-    optionally filtered by startDate and endDate.
+    optionally filtered by startDate, endDate, and user_id.
+
+    When user_id is provided, only reports belonging to that user are returned.
+    When user_id is None (admin), all reports for the vessel are returned.
     """
     # 1. Lookup Vessel
     if vessel_id is not None:
@@ -44,7 +52,11 @@ def load_vessel_and_reports(
     # 2. Build DailyReport Query
     query = db.query(DailyReport).filter(DailyReport.vessel_id == vessel.id)
 
-    # 3. Parse and Apply Date Filters
+    # 3. Apply user-scoped isolation (non-admin)
+    if user_id is not None:
+        query = query.filter(DailyReport.user_id == user_id)
+
+    # 4. Parse and Apply Date Filters
     if start_date_str:
         try:
             start_date = datetime.date.fromisoformat(start_date_str)
@@ -64,6 +76,13 @@ def load_vessel_and_reports(
     return vessel, reports, None
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _resolve_user_id(current_user: User) -> Optional[int]:
+    """Return user_id for scoping, or None for admins (full access)."""
+    return None if current_user.role == "admin" else current_user.id
+
+
 # ── API Endpoints ─────────────────────────────────────────────────────────────
 
 @router.get("/overview")
@@ -72,9 +91,13 @@ def get_overview(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve the general vessel overview (reporting dates and coverage)."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -91,9 +114,13 @@ def get_vessel_dashboard(
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     severeWeatherThreshold: float = Query(5.0, description="Beaufort scale threshold for severe weather"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve all operational analytics categories in a single comprehensive payload for dashboard view."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_id=vesselId, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_id=vesselId, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -133,9 +160,13 @@ def get_fuel_analytics(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve detailed fuel performance and consumption breakdown."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -150,9 +181,13 @@ def get_weather_analytics(
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     severeWeatherThreshold: float = Query(5.0, description="Beaufort scale threshold for severe weather"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve detailed weather statistics and severe weather days count."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -166,9 +201,13 @@ def get_operations_analytics(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve detailed operational status breakdown (days at anchor, underway, etc.)."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -184,9 +223,13 @@ def get_fuel_trend(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve day-by-day fuel consumption trend data."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -200,9 +243,13 @@ def get_speed_trend(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve day-by-day speed, RPM, and slip trend data."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -216,9 +263,13 @@ def get_weather_trend(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve day-by-day weather Beaufort and wind speed trend data."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -234,9 +285,13 @@ def get_timeline(
     startDate: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve a chronological timeline of reports and activities."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -251,9 +306,13 @@ def get_operational_insights(
     endDate: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     severeWeatherThreshold: float = Query(5.0, description="Beaufort scale threshold for severe weather"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Retrieve operational insights generated by the insights engine."""
-    vessel, reports, err = load_vessel_and_reports(db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate)
+    uid = _resolve_user_id(current_user)
+    vessel, reports, err = load_vessel_and_reports(
+        db, vessel_name=vesselName, start_date_str=startDate, end_date_str=endDate, user_id=uid,
+    )
     if err:
         return JSONResponse(status_code=400, content={"success": False, "message": err})
 
@@ -287,4 +346,3 @@ def get_operational_insights(
     insights = insights_engine.generate_all(payload)
 
     return {"success": True, "data": insights}
-

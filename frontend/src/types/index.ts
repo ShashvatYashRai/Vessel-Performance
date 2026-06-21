@@ -4,7 +4,6 @@ export interface UploadResponse {
   file_size?: number;
   message?: string;
 }
-
 export interface IngestionResponse {
   success: boolean;
   ingestion: {
@@ -18,6 +17,8 @@ export interface IngestionResponse {
     detectedReportColumns: number;
     parserVersion: string;
   };
+  vesselId?: number;
+  vesselName?: string;
   message?: string;
 }
 
@@ -224,5 +225,34 @@ export interface RoutePlanResult {
   generatedAt?: string;
   message?: string;
 }
+
+// ── Admin Panel Types ────────────────────────────────────────────────────────
+
+export interface RecentUploadActivity {
+  reportId: number;
+  reportDate: string | null;
+  sourceFileName: string;
+  vesselName: string;
+  uploadedBy: string;
+  ingestedAt: string | null;
+}
+
+export interface AdminPlatformStats {
+  totalUsers: number;
+  totalReports: number;
+  totalVessels: number;
+  recentUploads: number;
+  recentActivity: RecentUploadActivity[];
+}
+
+export interface AdminUserInfo {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  reportCount: number;
+  createdAt: string | null;
+}
+
 
 

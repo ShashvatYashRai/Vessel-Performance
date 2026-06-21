@@ -190,6 +190,7 @@ def ingest_reports(
     db: Session,
     parsed_data: Dict[str, Any],
     source_file_name: str,
+    user_id: Optional[int] = None,
 ) -> Dict[str, int]:
     """
     Ingest parsed daily reports into PostgreSQL with UPSERT behavior.
@@ -199,6 +200,7 @@ def ingest_reports(
         parsed_data: Output from parse_excel_report() — contains vesselName,
                      technicalManager, reportCount, and reports[].
         source_file_name: Original uploaded filename for provenance.
+        user_id: Optional ID of the user uploading the report for ownership.
 
     Returns:
         Ingestion statistics dict with inserted, updated, duplicates, totalProcessed.
@@ -234,12 +236,13 @@ def ingest_reports(
         # Extract all promoted analytics columns
         promoted = extract_promoted_columns(report)
 
-        # Check for existing record (UPSERT lookup)
+        # Check for existing record (UPSERT lookup — scoped by user for isolation)
         existing = (
             db.query(DailyReport)
             .filter(
                 DailyReport.vessel_id == vessel.id,
                 DailyReport.report_date == report_date,
+                DailyReport.user_id == user_id,
             )
             .first()
         )
@@ -257,6 +260,8 @@ def ingest_reports(
             existing.raw_json = report
             existing.source_file_name = source_file_name
             existing.ingested_at = now
+            if user_id is not None:
+                existing.user_id = user_id
 
             # Update all promoted columns
             for col_name, col_value in promoted.items():
@@ -280,6 +285,7 @@ def ingest_reports(
                 raw_json=report,
                 source_file_name=source_file_name,
                 ingested_at=now,
+                user_id=user_id,
                 **promoted,
             )
             db.add(new_report)
