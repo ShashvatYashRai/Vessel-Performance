@@ -373,7 +373,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      {/* ──Footer ─────────────────────────────────────────────────────────── */}
       <footer className="border-t border-border/30">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
